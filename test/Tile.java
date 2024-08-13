@@ -123,7 +123,7 @@ public class Tile {
              return letterAmount.clone();
          }
          
-         public Bag getBag(){
+         public static Bag getBag(){
             if (instance == null) {
                 instance = new Bag();
             }
