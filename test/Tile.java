@@ -46,7 +46,7 @@ public class Tile {
         private Bag(){
             finalamountOflleter = new int[]
             { 9, 2, 2, 4, 12, 2, 3, 2, 9, 1, 1, 4, 2, 6, 8, 2, 1, 6, 4, 6, 4, 2, 2, 1, 2, 1 };
-            int[] letterAmount = finalamountOflleter.clone();
+            letterAmount = finalamountOflleter.clone();
             
             tilesAndScore = new Tile[26]; 
                 tilesAndScore[0] = new Tile('A', 1);
