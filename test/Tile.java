@@ -96,15 +96,20 @@ public class Tile {
              }
          }
  
-         Tile getTile(char letter){
-             int index= letter -'A';
-             if(letterAmount[index]==0){
-                 return null;
-             }
-             else{
-                 letterAmount[index]--;
-                 return tilesAndScore[index];
-             }    
+        Tile getTile(char letter){
+            if (letter < 'A' || letter > 'Z') {
+                return null;
+            }
+            else {
+                int index= letter -'A';
+                if(letterAmount[index]==0){
+                    return null;
+                }
+                else{
+                    letterAmount[index]--;
+                    return tilesAndScore[index];
+                }
+            }    
          }
          void put(Tile tile){
              int index = tile.letter - 'A';
