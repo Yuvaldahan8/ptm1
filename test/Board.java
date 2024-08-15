@@ -26,22 +26,46 @@ public class Board {
         }
         return copy;
     }
-    public boolean boardLegal(Word word){
-        //is the word entering the board ?
-        if(word.isVertical()){//T = אנכית
-            if((word.getRow()>=0)&&(word.getRow()+word.getTiles().length<SIZE)){
-                return true;
+    public boolean boardLegal(Word word){        
+        boolean legal = true;
+        //is the first placement is on the star ? 
+        boolean isItTheFirst = true;
+        while(isItTheFirst){
+            legal=false;
+            for(int i=0;i<word.getTiles().length; i++){
+                if((word.getCol()+i==SIZE/2)&&(word.getRow()+i==SIZE/2)){
+                        legal=true;
+                        break;
+                }
             }
-            return false;
-        }
-        else{//F= אופקית
-            if((word.getCol()>=0)&&(word.getCol()+word.getTiles().length<SIZE)){
-                return true;
-            }
-            return false;
+            isItTheFirst=false;
         }
 
-        //is the bord 
+        //is the word fit the board size ?
+        if(word.isVertical()){//T = אנכית
+            if((word.getRow()<0)||(word.getRow()+word.getTiles().length>SIZE)){
+                legal= false;
+            }
+        }
+        else{//F= אופקית
+            if((word.getCol()<0)||(word.getCol()+word.getTiles().length>SIZE)){
+                legal= false;
+            }
+        }
+
+        //is the word leaning on an exists letter?
+        for(int i=0; i<word.getTiles().length; i++){
+            int currentRow = word.isVertical() ? word.getRow() + i : word.getRow();  
+            int currentCol = word.isVertical() ? word.getCol() : word.getCol() + i;
+            if(board[currentRow][currentCol]!=null)
+            {
+                legal=true;
+                break;            
+            }
+            legal=false;
+        }
+
+        return legal;
     }
 
 }
