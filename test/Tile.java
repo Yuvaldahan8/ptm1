@@ -12,6 +12,15 @@ public class Tile {
         this.letter=letter;
     }
 
+
+    public char getLetter() {
+        return letter;
+    }
+
+    public int getScore() {
+        return score;
+    }
+    
     @Override
     public int hashCode() {
         final int prime = 31;
