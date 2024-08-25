@@ -20,7 +20,7 @@ public class Tile {
     public int getScore() {
         return score;
     }
-    
+
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -85,7 +85,15 @@ public class Tile {
                 tilesAndScore[24] = new Tile('Y', 4);
                 tilesAndScore[25] = new Tile('Z', 10);
         }
- 
+
+        public int getScoreOfTile(char letter) {
+            Tile tile = getTile(letter);
+            if (tile != null) {
+                return tile.getScore(); 
+            } else {
+                return -1; 
+            }
+        }    
         public Tile getRand(){
              int totalTiles = 0;
              Random random = new Random();
@@ -120,7 +128,7 @@ public class Tile {
                 }
             }    
          }
-         void put(Tile tile){
+        public void put(Tile tile){
              int index = tile.letter - 'A';
              if(letterAmount[index]<finalamountOflleter[index]){
                  letterAmount[index]++;

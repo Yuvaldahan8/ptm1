@@ -6,8 +6,6 @@ public class Board {
     private static final int SIZE = 15;
     private static Board instance = null;
     private Tile[][] board;
-        boolean legal = true;
-
     private Board() {
         board = new Tile[SIZE][SIZE];
     }
@@ -19,156 +17,221 @@ public class Board {
         }
         return instance;
     }
-    public Tile[][] getTiles(){//to chaeck if it puts null were there is nothing on the board
+
+    public Tile[][] getTiles() {
         Tile[][] copy = new Tile[SIZE][SIZE];
-        for( int i=0; i<SIZE ; i++){
-            for(int j=0; j<SIZE; j++){
-                copy[i][j]=board[i][j];
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                copy[i][j] = board[i][j];
             }
         }
         return copy;
     }
-    public boolean boardLegal(Word word){      
-        Tile[] wordtil= word.getTiles();  
-        //is the first placement is on the star ? 
-        boolean isItTheFirst = true;
-        if(isItTheFirst){
-            legal=false;
-            for(int i=0;i<word.getTiles().length; i++){
-                if((word.getCol()+i==SIZE/2)&&(word.getRow()+i==SIZE/2)){
-                        legal=true;
-                        break;
-                }
-            }
-            isItTheFirst=false;
-        }
 
-        //is the word fit the board size ?
-        if(word.isVertical()){//T = אנכית
-            if((word.getRow()<0)||(word.getRow()+word.getTiles().length>SIZE)){
-                legal= false;
-            }
-        }
-        else{//F= אופקית
-            if((word.getCol()<0)||(word.getCol()+word.getTiles().length>SIZE)){
-                legal= false;
-            }
-        }
+    public boolean boardLegal(Word word) {
+        int startRow= word.getRow();
+        int startCol=word.getCol();
+        int legalCounter = 0; 
+        boolean legalForAll = true;
+        boolean forTheRest = false;
+        boolean forTheFirst = false;
 
-        //is the word leaning on an exists letter?
-        // Does the word fit the board size?
-        if (word.isVertical()) { // T = Vertical
-            if ((word.getRow() < 0) || (word.getRow() + word.getTiles().length > SIZE)) {
-                legal = false;
-            }
-        } else { // F = Horizontal
-            if ((word.getCol() < 0) || (word.getCol() + word.getTiles().length > SIZE)) {
-                legal = false;
-            }
-        }
-
-        // Is the word leaning on an existing letter?
         for (int i = 0; i < word.getTiles().length; i++) {
-            int currentRow = word.isVertical() ? word.getRow() + i : word.getRow(); // T = Vertical
-            int currentCol = word.isVertical() ? word.getCol() : word.getCol() + i;  // F = Horizontal
-            if((currentCol<15 && currentCol>0)&&(currentRow<15 && currentRow>0)){
-                // בדיקה אם יש אריח קיים על הלוח
-                if (board[currentRow][currentCol] != null) {
-                    // אם האות הקיימת בלוח לא תואמת לאות של המילה החדשה
-                    if (board[currentRow][currentCol].getLetter() != word.getTiles()[i].getLetter()) {
-                        return false; // The word is not legal
+            int row = word.isVertical() ? startRow + i : startRow; // T == אנכי, F == אופקי
+            int col = word.isVertical() ? startCol  : startCol + i;
+        
+            // בדיקה אם המיקום הוא מחוץ ללוח
+            if (row < 0 || row >= SIZE || col < 0 || col >= SIZE) {
+                legalForAll = false;
+                return false;
+            }
+            
+            // בדיקה אם המילה מתחילה במרכז הלוח (למילה הראשונה)
+            if ((row == 7 && col == 7) && (board[7][7] == null)) {
+                forTheFirst = true;
+            }
+            else if(word.getTiles()[i] != null && word.getTiles()[i].letter == '_') {
+
+                System.out.println("here 2");
+                // בדיקה אם יש כבר אות קיימת בלוח במקום של ה-_
+                if (board[row][col] != null) {
+                    // החלפת התו '_' באות הקיימת בלוח
+                    word.getTiles()[i] = board[row][col];
+        
+                    // בדיקה אם המילה החדשה חוקית במילון
+                    if (dictionaryLegal(word)) {
+                        forTheRest = true; // האות החסרה משלימה למילה חוקית
+                        System.out.println("here 3");
                     }
                 }
             }
-            return false;
+            else{
+                    // בדיקה אם יש אותות סמוכות במאונך או במאוזן
+                    boolean adjacent = (row > 0 && board[row - 1][col] != null) ||
+                                       (row < SIZE - 1 && board[row + 1][col] != null) ||
+                                       (col > 0 && board[row][col - 1] != null) ||
+                                       (col < SIZE - 1 && board[row][col + 1] != null);
+                    if (adjacent) {
+                        forTheRest = true;
+                    }
+            }
+            
+            if(forTheRest ||forTheFirst ){
+                legalCounter =1;
+            }
+            
+        }        
+        if (legalForAll) {        
+            if (legalCounter==1 ) {
+                return true;
+            }
         }
+        return false;
+    }        
 
-        // If the word passed all checks, it's legal
-        return legal;
-    }
-    public boolean dictionaryLegal(Word word){//for now always returning true
+    public boolean isBoardEmpty() {
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                if (board[i][j] != null) {
+                    return false;
+                }
+            }
+        }
         return true;
     }
 
+    public boolean dictionaryLegal(Word word) {
+        return true; // לשימוש עתידי, תמיד מחזיר true
+    }
 
-    public ArrayList<Word> getWords(Word word){
-
-        ArrayList<Word> words = new ArrayList<>();
-        words.add(word);
+    public ArrayList<Word> getWords(Word word) {
+        ArrayList<Word> newWords = new ArrayList<>();
+        newWords.add(word);
+    
+        // שמור את מצב הלוח הנוכחי לצורך השוואה
+        Tile[][] originalBoard = getTiles();
+    
         int row = word.getRow();
         int col = word.getCol();
         Tile[] tiles = word.getTiles();
         boolean vertical = word.isVertical();
-
+    
         for (int i = 0; i < tiles.length; i++) {
+            if (tiles[i] == null) continue; // דלג על אריחים null
+    
             if (vertical) {
                 Word horizontalWord = extractWord(row + i, col, false);
-                if (horizontalWord != null) {
-                    words.add(horizontalWord);
+                if (horizontalWord != null && !isWordOnBoard(horizontalWord, originalBoard)) {
+                    newWords.add(horizontalWord);
                 }
             } else {
                 Word verticalWord = extractWord(row, col + i, true);
-                if (verticalWord != null) {
-                    words.add(verticalWord);
+                if (verticalWord != null && !isWordOnBoard(verticalWord, originalBoard)) {
+                    newWords.add(verticalWord);
                 }
             }
         }
-
-        return words;
+    
+        return newWords;
     }
+    
+    // פונקציה בודקת אם המילה קיימת בלוח המקורי
+    private boolean isWordOnBoard(Word word, Tile[][] board) {
+        int startRow = word.getRow();
+        int startCol = word.getCol();
+        Tile[] tiles = word.getTiles();
+        boolean vertical = word.isVertical();
+    
+        for (int i = 0; i < tiles.length; i++) {
+            int row = vertical ? startRow + i : startRow;
+            int col = vertical ? startCol : startCol + i;
+    
+            if (row < 0 || row >= SIZE || col < 0 || col >= SIZE) {
+                return false;
+            }
+            if (board[row][col] == null || !board[row][col].equals(tiles[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
 
     private Word extractWord(int row, int col, boolean vertical) {
-        int startRow = row, startCol = col;
+        int startRow = row;
+        int startCol = col;
 
-        while (startRow > 0 && board[startRow - 1][col] != null) {
-            startRow--;
-        }
-
-        while (startCol > 0 && board[row][startCol - 1] != null) {
-            startCol--;
+        // מציאת נקודת ההתחלה של המילה
+        if (vertical) {
+            while (startRow > 0 && board[startRow - 1][col] != null) {
+                startRow--;
+            }
+        } else {
+            while (startCol > 0 && board[row][startCol - 1] != null) {
+                startCol--;
+            }
         }
 
         ArrayList<Tile> wordTiles = new ArrayList<>();
-        while (startRow < SIZE && startCol < SIZE && board[startRow][startCol] != null) {
-            wordTiles.add(board[startRow][startCol]);
+        int endRow = startRow;
+        int endCol = startCol;
+
+        // יצירת המילה מהמיקום ההתחלתי ועד הסוף
+        while (endRow < SIZE && endCol < SIZE && board[endRow][endCol] != null) {
+            wordTiles.add(board[endRow][endCol]);
             if (vertical) {
-                startRow++;
+                endRow++;
             } else {
-                startCol++;
+                endCol++;
             }
         }
 
         if (wordTiles.size() > 1) {
             Tile[] wordArray = wordTiles.toArray(new Tile[0]);
-            return new Word(wordArray, startRow, startCol, vertical);
+            return new Word(wordArray, startRow, startCol, vertical); // החזרת המיקום ההתחלתי המתאים
         }
 
         return null;
     }
+
     public int getScore(Word word) {
         int score = 0;
         int wordMultiplier = 1;
-    
+
+        int startrow = word.getRow();
+        int startcol = word.getCol();
         for (int i = 0; i < word.getTiles().length; i++) {
-            int curCol = word.isVertical() ? word.getCol() : word.getCol() + i;
-            int curRow = word.isVertical() ? word.getRow() + i : word.getRow();
-            Tile[] tiles = word.getTiles();
-    
-            // בדיקה אם זו משבצת של כפל מילה
+            int letterScore = 0; 
+            Tile tile = word.getTiles()[i];
+          
+        
+            int curCol = word.isVertical() ? startcol : startcol + i;
+            int curRow = word.isVertical() ? startrow + i : startrow;
+
+            if (tile == null) {
+                tile=board[curRow][curCol];
+            } 
             int letterMultiplier = getLetterMultiplier(curCol, curRow);
             int curWordMultiplier = getWordMultiplier(curCol, curRow);
-    
-            // חישוב הניקוד עבור האות הנוכחית עם הכפלת הניקוד שלה
-            score += tiles[i].getScore() * letterMultiplier;
-    
-            // הכפלת הניקוד של המילה בהתאם למשבצת
-            wordMultiplier *= curWordMultiplier;
+
+            Tile.Bag bag = Tile.Bag.getBag(); 
+            letterScore = bag.getScoreOfTile(word.getTiles()[i].letter);
+            if(word.getTiles()[i].letter=='_'){
+                System.out.println("here here");
+                letterScore= bag.getScoreOfTile(board[curRow][curCol].getLetter());
+            }
+            score += letterScore * letterMultiplier;
+            if(curCol==7&&curRow==7 ){
+                curWordMultiplier=2;
+            }             
+            wordMultiplier *= curWordMultiplier;   
+            System.out.println(score + " "+  wordMultiplier );
+
         }
-    
-        // החזרת הניקוד הסופי לאחר הכפלת המילה
-        return score * wordMultiplier;
+        System.out.println(score * wordMultiplier );
+        return (score * wordMultiplier);
     }
-    
+
     public int getLetterMultiplier(int col, int row) {
         // בדיקת משבצות שכופלות את האות
         if ((row == 1 && col == 5) || (row == 1 && col == 9) || (row == 5 && col == 1) ||
@@ -189,20 +252,75 @@ public class Board {
             return 1; // משבצת רגילה
         }
     }
-    
+
     public int getWordMultiplier(int col, int row) {
-        
+        // בדיקת משבצות שכופלות את המילה
         if ((row == 0 && col == 0) || (row == 0 && col == 7) || (row == 0 && col == 14) ||
             (row == 7 && col == 0) || (row == 7 && col == 14) || (row == 14 && col == 0) ||
             (row == 14 && col == 7) || (row == 14 && col == 14)) {
-            return 3; 
-        } else if ((row == col) && (row == 1 || row == 2 || row == 3 || row == 4 || row == 10 || row == 11 || row == 12 || row == 13) ||
-                   (row == 1 && col == 13) || (row == 2 && col == 12) || (row == 3 && col == 11) || (row == 4 && col == 10) ||
-                   (row == 10 && col == 4) || (row == 11 && col == 3) || (row == 12 && col == 2) || (row == 13 && col == 1)) {
-            return 2; 
+            return 3; // כפל מילה משולש
+        } else if ((row == 1 && col == 1) || (row == 2 && col == 2) || (row == 3 && col == 3) ||
+                   (row == 4 && col == 4) || (row == 13 && col == 1) || (row == 12 && col == 2) ||
+                   (row == 11 && col == 3) || (row == 10 && col == 4) || (row == 1 && col == 13) ||
+                   (row == 2 && col == 12) || (row == 3 && col == 11) || (row == 4 && col == 10) ||
+                   (row == 10 && col == 10) || (row == 11 && col == 11) || (row == 12 && col == 12) ||
+                   (row == 13 && col == 13)) {
+            return 2; // כפל מילה כפול
         } else {
-            return 1; 
+            return 1; // משבצת רגילה
         }
     }
-    
+    public int tryPlaceWord(Word word) {
+        if (!boardLegal(word)) {
+            return 0; // המילה אינה חוקית לפי חוקי הלוח
+        }
+        
+        ArrayList<Word> newWords = getWords(word);
+        for (Word w : newWords) {
+            if (!dictionaryLegal(w)) {
+                return 0; // אחת מהמילים החדשות אינה חוקית לפי המילון
+            }
+        }
+       // הנחת המילה על הלוח
+        placeWord(word);
+       
+        // חישוב הציון עבור כל המילים שנוצרו
+        int totalScore = 0;
+        for (Word w : newWords) {
+            totalScore += getScore(w);
+        }        
+        return totalScore;
+    }
+    public void printBoard() {
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                if (board[i][j] != null) {
+                    System.out.print(board[i][j].getLetter() + " ");
+                } else {
+                    System.out.print(". ");
+                }
+            }
+            System.out.println();
+        }
+    }
+
+    public void placeWord(Word word) {
+        Tile[] tiles = word.getTiles();
+        int startCol=word.getCol();
+        int startRow = word.getRow();
+        for (int i = 0; i < tiles.length; i++) {
+            int curRow = word.isVertical() ? startRow + i : startRow;
+            int curCol = word.isVertical() ?startCol : startCol+ i ;
+            if((tiles[i]!=null)&&(tiles[i].getLetter() =='_') &&(board[curRow][curCol] != null)){
+                tiles[i] = board[curRow][curCol];
+            }
+            // הנחת אריח על הלוח אם המשבצת ריקה
+            if (board[curRow][curCol] == null && tiles[i] != null) {
+                board[curRow][curCol] = tiles[i];
+            }
+        }
+        printBoard();
+
+    }
+
 }
