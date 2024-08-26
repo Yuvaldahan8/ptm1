@@ -254,10 +254,8 @@ public class Board {
         // הנחת המילה על הלוח
         placeWord(word);
         for (Word w : newWords) {
-            System.out.println(w);
             totalScore += getTotalScore(w);
         }
-        System.out.println(totalScore);
 
         return totalScore;
     }
@@ -293,20 +291,20 @@ public class Board {
                 board[curRow][curCol] = tiles[i];
             }
         }
-        printBoard();
+        //printBoard();
 
     }
 
-    public void printBoard() {
-        for (int i = 0; i < SIZE; i++) {
-            for (int j = 0; j < SIZE; j++) {
-                if (board[i][j] != null) {
-                    System.out.print(board[i][j].getLetter() + " ");
-                } else {
-                    System.out.print(". ");
-                }
-            }
-            System.out.println();
-        }
-    }
+    // public void printBoard() {
+    //     for (int i = 0; i < SIZE; i++) {
+    //         for (int j = 0; j < SIZE; j++) {
+    //             if (board[i][j] != null) {
+    //                 System.out.print(board[i][j].getLetter() + " ");
+    //             } else {
+    //                 System.out.print(". ");
+    //             }
+    //         }
+    //         System.out.println();
+    //     }
+    // }
 }
