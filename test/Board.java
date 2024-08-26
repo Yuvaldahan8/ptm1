@@ -1,6 +1,8 @@
 package test;
 
 import java.util.ArrayList;
+import java.util.Set;
+import java.util.HashSet;
 
 public class Board {
     private static final int SIZE = 15;
@@ -55,17 +57,11 @@ public class Board {
                 forTheFirst = true;
             }
             else if(word.getTiles()[i] != null && word.getTiles()[i].letter == '_') {
-
-                System.out.println("here 2");
-                // בדיקה אם יש כבר אות קיימת בלוח במקום של ה-_
                 if (board[row][col] != null) {
-                    // החלפת התו '_' באות הקיימת בלוח
                     word.getTiles()[i] = board[row][col];
         
-                    // בדיקה אם המילה החדשה חוקית במילון
                     if (dictionaryLegal(word)) {
                         forTheRest = true; // האות החסרה משלימה למילה חוקית
-                        System.out.println("here 3");
                     }
                 }
             }
@@ -138,30 +134,29 @@ public class Board {
         return ws;
     }
     
-    public ArrayList<Word> getWords(Word w) {
+    private Set<Word> getWords(Word w) {
         Tile[][] ts = getTiles();
-        ArrayList<Word> before = getAllWords(ts);
+        Set<Word> before = new HashSet<>(getAllWords(ts));
     
         // הנחת המילה על הלוח
         int row = w.getRow();
         int col = w.getCol();
         for (int i = 0; i < w.getTiles().length; i++) {
+            ts[row][col] = w.getTiles()[i];
             if (w.isVertical()) {
-                ts[row][col] = w.getTiles()[i];
                 row++;
             } else {
-                ts[row][col] = w.getTiles()[i];
                 col++;
             }
         }
     
-        ArrayList<Word> after = getAllWords(ts);
+        Set<Word> after = new HashSet<>(getAllWords(ts));
         after.removeAll(before); // השוואת המילים החדשות לאלו הקיימות
     
         return after;
     }
     
-    public int getTotalScore(Word word) {
+    private int getTotalScore(Word word) {
         int score = 0;
         int wordMultiplier = 1;
         int startRow = word.getRow();
@@ -171,14 +166,13 @@ public class Board {
             Tile tile = word.getTiles()[i];
             int curCol = word.isVertical() ? startCol : startCol + i;
             int curRow = word.isVertical() ? startRow + i : startRow;
-                if (tile == null) {
+            if (tile == null) {
                 tile = board[curRow][curCol];
             }
-                if (tile == null) {
+            if (tile == null) {
                 continue;
             }
-            int letterScore = Tile.Bag.getBag().getScoreOfTile(tile.getLetter());
-    
+            int letterScore = tile.score;
             int letterMultiplier = getLetterMultiplier(curCol, curRow);
             int curWordMultiplier = getWordMultiplier(curCol, curRow);
     
@@ -190,31 +184,23 @@ public class Board {
             }
             wordMultiplier *=curWordMultiplier;
         }
-    
-        int totalScore = score * wordMultiplier;  
-
-        System.out.println(score * wordMultiplier );
-
+        int totalScore=0;
+        totalScore = score * wordMultiplier;  
         return totalScore;
     }
     
-    public int getScore(Word word) {
-        // חישוב הניקוד של המילה שהונחה
-        totalScore = getTotalScore(word);
-    
-        // מציאת כל המילים החדשות שנוצרו
-        ArrayList<Word> newWords = getWords(word);
-    
-        // חישוב הניקוד של כל מילה חדשה
-        for (Word newWord : newWords) {
-            if (!newWord.equals(word)) { // ודא שלא מחשבים שוב את המילה המקורית
-                totalScore += getTotalScore(newWord);
-            }
-        }
-        System.out.println(totalScore+"here" );
-
-        return totalScore;
-    }
+    // private int getScore(Word word) {
+    //     totalScore = getTotalScore(word);
+    //     ArrayList<Word> newWords = getWords(word);
+    //     if(!newWords.isEmpty()){
+    //         for (Word newWord : newWords) {
+    //             if (!newWord.equals(word)) { // ודא שלא מחשבים שוב את המילה המקורית
+    //                 totalScore += getTotalScore(newWord);
+    //             }
+    //         }
+    //     }
+    //     return totalScore;
+    // }
     
 
     public int getLetterMultiplier(int col, int row) {
@@ -255,25 +241,41 @@ public class Board {
             return 1; // משבצת רגילה
         }
     }
+
     public int tryPlaceWord(Word word) {
+        
         if (!boardLegal(word)) {
             return 0; // המילה אינה חוקית לפי חוקי הלוח
         }
-        
+        // חישוב הציון עבור כל המילים החדשות שנוצרו
+        Word fixedWord = fixWord(word);
+        Set<Word> newWords = getWords(fixedWord);
+        newWords.add(fixedWord);
         // הנחת המילה על הלוח
         placeWord(word);
-        
-        // חישוב הציון עבור כל המילים החדשות שנוצרו
-        ArrayList<Word> newWords = getWords(word);
-        int totalScore = getScore(word); // ניקוד של המילה הראשית
-        
         for (Word w : newWords) {
-            if (!w.equals(word)) { // ודא שלא מחשבים שוב את המילה המקורית
-                totalScore += getScore(w);
+            System.out.println(w);
+            totalScore += getTotalScore(w);
+        }
+        System.out.println(totalScore);
+
+        return totalScore;
+    }
+
+    private Word fixWord(Word word) {
+        Tile[] fixedTiles = new Tile[word.getTiles().length];
+        for (int i=0; i<fixedTiles.length; i++) {
+            if (word.getTiles()[i] == null) {
+                if (word.isVertical()) {
+                    fixedTiles[i] = board[word.getRow()+i][word.getCol()];
+                } else {
+                    fixedTiles[i] = board[word.getRow()][word.getCol()+i];
+                }
+            } else {
+                fixedTiles[i] = word.getTiles()[i];
             }
         }
-        
-        return totalScore;
+        return new Word(fixedTiles, word.getRow(), word.getCol(), word.isVertical());
     }
 
     public void placeWord(Word word) {
@@ -294,6 +296,7 @@ public class Board {
         printBoard();
 
     }
+
     public void printBoard() {
         for (int i = 0; i < SIZE; i++) {
             for (int j = 0; j < SIZE; j++) {

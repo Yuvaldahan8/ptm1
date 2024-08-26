@@ -86,14 +86,6 @@ public class Tile {
                 tilesAndScore[25] = new Tile('Z', 10);
         }
 
-        public int getScoreOfTile(char letter) {
-            Tile tile = getTile(letter);
-            if (tile != null) {
-                return tile.getScore(); 
-            } else {
-                return -1; 
-            }
-        }    
         public Tile getRand(){
              int totalTiles = 0;
              Random random = new Random();
