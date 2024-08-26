@@ -243,7 +243,7 @@ public class Board {
     }
 
     public int tryPlaceWord(Word word) {
-        
+        totalScore=0;
         if (!boardLegal(word)) {
             return 0; // המילה אינה חוקית לפי חוקי הלוח
         }
