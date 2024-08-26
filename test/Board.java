@@ -6,8 +6,12 @@ public class Board {
     private static final int SIZE = 15;
     private static Board instance = null;
     private Tile[][] board;
+    private int firstTime = 0;
+    int totalScore=0; 
+
     private Board() {
         board = new Tile[SIZE][SIZE];
+        
     }
 
     // Singleton instance getter
@@ -89,148 +93,129 @@ public class Board {
         return false;
     }        
 
-    public boolean isBoardEmpty() {
-        for (int i = 0; i < SIZE; i++) {
-            for (int j = 0; j < SIZE; j++) {
-                if (board[i][j] != null) {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
     public boolean dictionaryLegal(Word word) {
         return true; // לשימוש עתידי, תמיד מחזיר true
     }
-
-    public ArrayList<Word> getWords(Word word) {
-        ArrayList<Word> newWords = new ArrayList<>();
-        newWords.add(word);
+    private ArrayList<Word> getAllWords(Tile[][] ts) {
+        ArrayList<Word> ws = new ArrayList<>();
     
-        // שמור את מצב הלוח הנוכחי לצורך השוואה
-        Tile[][] originalBoard = getTiles();
-    
-        int row = word.getRow();
-        int col = word.getCol();
-        Tile[] tiles = word.getTiles();
-        boolean vertical = word.isVertical();
-    
-        for (int i = 0; i < tiles.length; i++) {
-            if (tiles[i] == null) continue; // דלג על אריחים null
-    
-            if (vertical) {
-                Word horizontalWord = extractWord(row + i, col, false);
-                if (horizontalWord != null && !isWordOnBoard(horizontalWord, originalBoard)) {
-                    newWords.add(horizontalWord);
+        // מציאת מילים אופקיות
+        for (int i = 0; i < ts.length; i++) {
+            int j = 0;
+            while (j < ts[i].length) {
+                ArrayList<Tile> tal = new ArrayList<>();
+                int startCol = j;
+                while (j < ts[i].length && ts[i][j] != null) {
+                    tal.add(ts[i][j]);
+                    j++;
                 }
-            } else {
-                Word verticalWord = extractWord(row, col + i, true);
-                if (verticalWord != null && !isWordOnBoard(verticalWord, originalBoard)) {
-                    newWords.add(verticalWord);
+                if (tal.size() > 1) {
+                    Tile[] tiles = new Tile[tal.size()];
+                    ws.add(new Word(tal.toArray(tiles), i, startCol, false));
                 }
+                j++;
             }
         }
     
-        return newWords;
+        // מציאת מילים אנכיות
+        for (int j = 0; j < ts[0].length; j++) {
+            int i = 0;
+            while (i < ts.length) {
+                ArrayList<Tile> tal = new ArrayList<>();
+                int startRow = i;
+                while (i < ts.length && ts[i][j] != null) {
+                    tal.add(ts[i][j]);
+                    i++;
+                }
+                if (tal.size() > 1) {
+                    Tile[] tiles = new Tile[tal.size()];
+                    ws.add(new Word(tal.toArray(tiles), startRow, j, true));
+                }
+                i++;
+            }
+        }
+    
+        return ws;
     }
     
-    // פונקציה בודקת אם המילה קיימת בלוח המקורי
-    private boolean isWordOnBoard(Word word, Tile[][] board) {
-        int startRow = word.getRow();
-        int startCol = word.getCol();
-        Tile[] tiles = word.getTiles();
-        boolean vertical = word.isVertical();
+    public ArrayList<Word> getWords(Word w) {
+        Tile[][] ts = getTiles();
+        ArrayList<Word> before = getAllWords(ts);
     
-        for (int i = 0; i < tiles.length; i++) {
-            int row = vertical ? startRow + i : startRow;
-            int col = vertical ? startCol : startCol + i;
-    
-            if (row < 0 || row >= SIZE || col < 0 || col >= SIZE) {
-                return false;
-            }
-            if (board[row][col] == null || !board[row][col].equals(tiles[i])) {
-                return false;
-            }
-        }
-        return true;
-    }
-    
-
-    private Word extractWord(int row, int col, boolean vertical) {
-        int startRow = row;
-        int startCol = col;
-
-        // מציאת נקודת ההתחלה של המילה
-        if (vertical) {
-            while (startRow > 0 && board[startRow - 1][col] != null) {
-                startRow--;
-            }
-        } else {
-            while (startCol > 0 && board[row][startCol - 1] != null) {
-                startCol--;
-            }
-        }
-
-        ArrayList<Tile> wordTiles = new ArrayList<>();
-        int endRow = startRow;
-        int endCol = startCol;
-
-        // יצירת המילה מהמיקום ההתחלתי ועד הסוף
-        while (endRow < SIZE && endCol < SIZE && board[endRow][endCol] != null) {
-            wordTiles.add(board[endRow][endCol]);
-            if (vertical) {
-                endRow++;
+        // הנחת המילה על הלוח
+        int row = w.getRow();
+        int col = w.getCol();
+        for (int i = 0; i < w.getTiles().length; i++) {
+            if (w.isVertical()) {
+                ts[row][col] = w.getTiles()[i];
+                row++;
             } else {
-                endCol++;
+                ts[row][col] = w.getTiles()[i];
+                col++;
             }
         }
-
-        if (wordTiles.size() > 1) {
-            Tile[] wordArray = wordTiles.toArray(new Tile[0]);
-            return new Word(wordArray, startRow, startCol, vertical); // החזרת המיקום ההתחלתי המתאים
-        }
-
-        return null;
+    
+        ArrayList<Word> after = getAllWords(ts);
+        after.removeAll(before); // השוואת המילים החדשות לאלו הקיימות
+    
+        return after;
     }
-
-    public int getScore(Word word) {
+    
+    public int getTotalScore(Word word) {
         int score = 0;
         int wordMultiplier = 1;
-
-        int startrow = word.getRow();
-        int startcol = word.getCol();
+        int startRow = word.getRow();
+        int startCol = word.getCol();
+    
         for (int i = 0; i < word.getTiles().length; i++) {
-            int letterScore = 0; 
             Tile tile = word.getTiles()[i];
-          
-        
-            int curCol = word.isVertical() ? startcol : startcol + i;
-            int curRow = word.isVertical() ? startrow + i : startrow;
-
-            if (tile == null) {
-                tile=board[curRow][curCol];
-            } 
+            int curCol = word.isVertical() ? startCol : startCol + i;
+            int curRow = word.isVertical() ? startRow + i : startRow;
+                if (tile == null) {
+                tile = board[curRow][curCol];
+            }
+                if (tile == null) {
+                continue;
+            }
+            int letterScore = Tile.Bag.getBag().getScoreOfTile(tile.getLetter());
+    
             int letterMultiplier = getLetterMultiplier(curCol, curRow);
             int curWordMultiplier = getWordMultiplier(curCol, curRow);
-
-            Tile.Bag bag = Tile.Bag.getBag(); 
-            letterScore = bag.getScoreOfTile(word.getTiles()[i].letter);
-            if(word.getTiles()[i].letter=='_'){
-                System.out.println("here here");
-                letterScore= bag.getScoreOfTile(board[curRow][curCol].getLetter());
-            }
+    
             score += letterScore * letterMultiplier;
-            if(curCol==7&&curRow==7 ){
-                curWordMultiplier=2;
-            }             
-            wordMultiplier *= curWordMultiplier;   
-            System.out.println(score + " "+  wordMultiplier );
 
+            if ((curCol == 7 && curRow == 7)&& (firstTime==0)) {
+                firstTime++;
+                curWordMultiplier = 2;
+            }
+            wordMultiplier *=curWordMultiplier;
         }
+    
+        int totalScore = score * wordMultiplier;  
+
         System.out.println(score * wordMultiplier );
-        return (score * wordMultiplier);
+
+        return totalScore;
     }
+    
+    public int getScore(Word word) {
+        // חישוב הניקוד של המילה שהונחה
+        totalScore = getTotalScore(word);
+    
+        // מציאת כל המילים החדשות שנוצרו
+        ArrayList<Word> newWords = getWords(word);
+    
+        // חישוב הניקוד של כל מילה חדשה
+        for (Word newWord : newWords) {
+            if (!newWord.equals(word)) { // ודא שלא מחשבים שוב את המילה המקורית
+                totalScore += getTotalScore(newWord);
+            }
+        }
+        System.out.println(totalScore+"here" );
+
+        return totalScore;
+    }
+    
 
     public int getLetterMultiplier(int col, int row) {
         // בדיקת משבצות שכופלות את האות
@@ -275,33 +260,20 @@ public class Board {
             return 0; // המילה אינה חוקית לפי חוקי הלוח
         }
         
-        ArrayList<Word> newWords = getWords(word);
-        for (Word w : newWords) {
-            if (!dictionaryLegal(w)) {
-                return 0; // אחת מהמילים החדשות אינה חוקית לפי המילון
-            }
-        }
-       // הנחת המילה על הלוח
+        // הנחת המילה על הלוח
         placeWord(word);
-       
-        // חישוב הציון עבור כל המילים שנוצרו
-        int totalScore = 0;
+        
+        // חישוב הציון עבור כל המילים החדשות שנוצרו
+        ArrayList<Word> newWords = getWords(word);
+        int totalScore = getScore(word); // ניקוד של המילה הראשית
+        
         for (Word w : newWords) {
-            totalScore += getScore(w);
-        }        
-        return totalScore;
-    }
-    public void printBoard() {
-        for (int i = 0; i < SIZE; i++) {
-            for (int j = 0; j < SIZE; j++) {
-                if (board[i][j] != null) {
-                    System.out.print(board[i][j].getLetter() + " ");
-                } else {
-                    System.out.print(". ");
-                }
+            if (!w.equals(word)) { // ודא שלא מחשבים שוב את המילה המקורית
+                totalScore += getScore(w);
             }
-            System.out.println();
         }
+        
+        return totalScore;
     }
 
     public void placeWord(Word word) {
@@ -322,5 +294,16 @@ public class Board {
         printBoard();
 
     }
-
+    public void printBoard() {
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                if (board[i][j] != null) {
+                    System.out.print(board[i][j].getLetter() + " ");
+                } else {
+                    System.out.print(". ");
+                }
+            }
+            System.out.println();
+        }
+    }
 }
