@@ -37,7 +37,6 @@ public class Board {
     public boolean boardLegal(Word word) {
         int startRow= word.getRow();
         int startCol=word.getCol();
-        int legalCounter = 0; 
         boolean legalForAll = true;
         boolean forTheRest = false;
         boolean forTheFirst = false;
@@ -76,13 +75,10 @@ public class Board {
                     }
             }
             
-            if(forTheRest ||forTheFirst ){
-                legalCounter =1;
-            }
             
         }        
         if (legalForAll) {        
-            if (legalCounter==1 ) {
+            if ( forTheRest ||forTheFirst ) {
                 return true;
             }
         }
@@ -188,19 +184,6 @@ public class Board {
         totalScore = score * wordMultiplier;  
         return totalScore;
     }
-    
-    // private int getScore(Word word) {
-    //     totalScore = getTotalScore(word);
-    //     ArrayList<Word> newWords = getWords(word);
-    //     if(!newWords.isEmpty()){
-    //         for (Word newWord : newWords) {
-    //             if (!newWord.equals(word)) { // ודא שלא מחשבים שוב את המילה המקורית
-    //                 totalScore += getTotalScore(newWord);
-    //             }
-    //         }
-    //     }
-    //     return totalScore;
-    // }
     
 
     public int getLetterMultiplier(int col, int row) {
